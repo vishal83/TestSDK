@@ -1044,6 +1044,9 @@ function getCampaignInactiveReasons($aCampaign)
     if (strtotime($aCampaign['expire_date'].' 23:59:59') < time()) {
         $aReasons [] = $GLOBALS ['strAfterExpire'];
     }
+    if (($aCampaign['impressions'] != -1) && (($aCampaign['impressions_delivered'] * IMPRESSIONS_WEIGHTAGE + $aCampaign['clicks_delivered'] * CLICK_WEIGHTAGE) >= $aCampaign['impressions'] * IMPRESSIONS_WEIGHTAGE)) {
+        $aReasons [] = $GLOBALS ['strNoMoreCredits'];
+    }
 
     if (($aCampaign ['priority'] == 0 || $aCampaign ['priority'] == - 1) && $aCampaign ['weight'] == 0) {
         $aReasons [] = $GLOBALS ['strWeightIsNull'];

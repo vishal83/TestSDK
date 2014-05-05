@@ -1452,6 +1452,13 @@ abstract class OX_Dal_Maintenance_Statistics extends MAX_Dal_Common
                                 $disableReason |= OX_CAMPAIGN_DISABLED_CONVERSIONS;
                             }
                         }
+                        if ($aCampaign['targetimpressions'] > 0) {
+                           if (($aCampaign['targetimpressions'] * IMPRESSIONS_WEIGHTAGE) <= ($valuesRow['impressions'] * IMPRESSIONS_WEIGHTAGE + $valuesRow['clicks'] * CLICK_WEIGHTAGE)) {
+                                // The campaign has an impressions target, and this has been
+                                // passed, so update and disable the campaign
+                                $disableReason |= OX_CAMPAIGN_DISABLED_CREDITS;
+                            }
+                        }
                         if ($disableReason) {
                             // One of the campaign targets was exceeded, so disable
                             $message = '  - Exceeded a campaign quota: Deactivating campaign ID ' .

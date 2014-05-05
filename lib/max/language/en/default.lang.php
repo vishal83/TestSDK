@@ -1216,6 +1216,7 @@ $GLOBALS['strAfterExpire']                      = "the expiration date has been 
 $GLOBALS['strNoMoreImpressions']                = "there are no Impressions remaining";
 $GLOBALS['strNoMoreClicks']                     = "there are no Clicks remaining";
 $GLOBALS['strNoMoreConversions']                = "there are no Sales remaining";
+$GLOBALS['strNoMoreCredits']                    = "there are no Credits remaining";
 $GLOBALS['strWeightIsNull']                     = "its weight is set to zero";
 $GLOBALS['strRevenueIsNull']                    = "its revenue is set to zero";
 $GLOBALS['strTargetIsNull']                     = "its limit per day is set to zero - you need to either specify both an end date and a limit or set Limit per day value";

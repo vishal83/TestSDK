@@ -289,6 +289,9 @@ class DataObjects_Campaigns extends DB_DataObjectCommon
                     if ($this->conversions > 0 && $aStats[0]['conversions'] >= $this->conversions) {
                         return true;
                     }
+                    if ($this->views > 0 && (($aStats[0]['impressions'] * IMPRESSIONS_WEIGHTAGE + $aStats[0]['clicks'] * CLICK_WEIGHTAGE) >= ($this->views * IMPRESSIONS_WEIGHTAGE))) {
+                        return true;
+                    }
                 }
             }
         }

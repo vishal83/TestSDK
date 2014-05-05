@@ -873,7 +873,7 @@ class OA_Email
                $strMailBannerActivatedSubject, $strMailBannerDeactivatedSubject,
                $strMailBannerActivated, $strMailBannerDeactivated,
                $strNoMoreImpressions, $strNoMoreClicks, $strNoMoreConversions,
-               $strAfterExpire;
+               $strAfterExpire, $strNoMoreCredits;
 
         // Fetch the campaign
         $aCampaign = $this->_loadCampaign($campaignId);
@@ -920,6 +920,9 @@ class OA_Email
             }
             if ($reason & OX_CAMPAIGN_DISABLED_DATE) {
                 $email .= "\n  - " . $strAfterExpire;
+            }
+            if ($reason & OX_CAMPAIGN_DISABLED_CREDITS) {
+                $email .= "\n  - " . $strNoMoreCredits;
             }
             $email .= ".\n";
         }

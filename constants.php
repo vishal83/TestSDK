@@ -22,7 +22,7 @@
 function setupConstants()
 {
     // Define this version of Revive Adserver's constants
-    define('VERSION', '3.0.4');
+    define('VERSION',           '3.0.4');
     define('PRODUCT_NAME',      'Revive Adserver');
     define('PRODUCT_URL',       'www.revive-adserver.com');
     define('PRODUCT_DOCSURL',   'http://documentation.revive-adserver.com');
@@ -112,7 +112,11 @@ function setupConstants()
     define('OX_CAMPAIGN_DISABLED_CLICKS',       4);
     define('OX_CAMPAIGN_DISABLED_CONVERSIONS',  8);
     define('OX_CAMPAIGN_DISABLED_DATE',        16);
+    define('OX_CAMPAIGN_DISABLED_CREDITS',     32);
 
+    // Impression and click weightage
+    define('IMPRESSIONS_WEIGHTAGE', 1);
+    define('CLICK_WEIGHTAGE', 1000);
 
     // Time contstants
     define('SECONDS_PER_WEEK', 604800);
