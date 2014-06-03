@@ -1331,6 +1331,133 @@ abstract class OX_Dal_Maintenance_Statistics extends MAX_Dal_Common
         $oNowDate = new Date($oDate);
         $oNowDate->toUTC();
 
+
+        // Fetch all campaigns other than featured ones 
+        $query = "
+            SELECT
+                cl.clientid AS advertiser_id,
+                cl.account_id AS advertiser_account_id,
+                cl.agencyid AS agency_id,
+                cl.clientname AS advertiser_name,
+                cl.contact AS contact,
+                cl.email AS email,
+                cl.reportdeactivate AS send_activate_deactivate_email,
+                ca.campaignid AS campaign_id,
+                ca.campaignname AS campaign_name,
+                ca.views AS targetimpressions,
+                ca.clicks AS targetclicks,
+                ca.conversions AS targetconversions,
+                ca.status AS status,
+                ca.activate_time AS start,
+                ca.expire_time AS end
+            FROM
+                {$prefix}campaigns AS ca,
+                {$prefix}clients AS cl
+            WHERE
+                ca.clientid = cl.clientid
+            AND
+                (
+                    ca.views > -1
+                    OR
+                    ca.clicks > -1
+                    OR
+                    ca.conversions > -1        
+                )
+            ORDER BY
+                advertiser_id";
+
+        OA::debug('- Requesting campaigns for updating the credits and status', PEAR_LOG_DEBUG);
+        $rsResult = $this->oDbh->query($query);
+        if (PEAR::isError($rsResult)) {
+            return MAX::raiseError($rsResult, MAX_ERROR_DBFAILURE, PEAR_ERROR_DIE);
+        }
+        OA::debug('- Found ' . $rsResult->numRows() . ' campaigns for updating the credits and status', PEAR_LOG_DEBUG);
+
+        while ($aCampaign = $rsResult->fetchRow()) {
+            // Query earned credits (impressions and clicks) for the campaign
+            OA::debug('  - Selecting impressions, clicks and conversions for the campaign ID = '.$aCampaign['campaign_id'], PEAR_LOG_DEBUG);
+            $query = "
+                SELECT
+                    SUM(dia.impressions) AS impressions,
+                    SUM(dia.clicks) AS clicks,
+                    SUM(dia.conversions) AS conversions
+                FROM
+                    ".$this->oDbh->quoteIdentifier($aConf['table']['prefix'].$aConf['table']['data_intermediate_ad'],true)." AS dia,
+                    ".$this->oDbh->quoteIdentifier($aConf['table']['prefix'].$aConf['table']['zones'],true)." AS z,
+                    ".$this->oDbh->quoteIdentifier($aConf['table']['prefix'].$aConf['table']['affiliates'],true)." AS w
+                WHERE
+                    dia.zone_id = z.zoneid
+                    AND z.affiliateid = w.affiliateid
+                    AND w.name = '{$aCampaign['advertiser_name']}'";
+
+            $rsResultInner = $this->oDbh->query($query);
+            if (PEAR::isError($rsResultInner)) {
+                return MAX::raiseError($rsResultInner, MAX_ERROR_DBFAILURE, PEAR_ERROR_DIE);
+            }
+
+            $valuesRow = $rsResultInner->fetchRow();
+            if (!isset($valuesRow['impressions'])) {
+                 // No impressions
+                 $valuesRow['impressions'] = 0;
+            }
+            if (!isset($valuesRow['clicks'])) {
+                 // No clicks
+                 $valuesRow['clicks'] = 0;
+            }
+            if (!isset($valuesRow['conversions'])) {
+                 // No conversions
+                 $valuesRow['conversions'] = 0;
+            }
+
+            $campaignStatus = 0;
+            if ($valuesRow['impressions'] || $valuesRow['clicks']) {
+                $campaignStatus = OA_ENTITY_STATUS_RUNNING;
+            } else {
+                $campaignStatus = OA_ENTITY_STATUS_EXPIRED;
+            }
+
+            if (($valuesRow['impressions'] != $aCampaign['targetimpressions']) ||
+                    ($valuesRow['clicks'] != $aCampaign['targetclicks']) ||
+                    ($campaignStatus != $aCampaign['status'])) {
+                                  
+                $message = "- Passed campaign start/stop time of '" . $oNowDate->getDate() . " UTC" .
+                               "': Activating/Deactivating campaign ID {$aCampaign['campaign_id']}: {$aCampaign['campaign_name']}";
+                OA::debug($message, PEAR_LOG_INFO);
+                $report .= $message . "\n";
+
+                // Update earned credits (i.e. views and clicks field) in the campaigns
+                $doCampaigns = OA_Dal::factoryDO('campaigns');
+                $doCampaigns->campaignid = $aCampaign['campaign_id'];
+                $doCampaigns->find();
+                $doCampaigns->fetch();
+                $doCampaigns->views = $valuesRow['impressions']; 
+                $doCampaigns->clicks = $valuesRow['clicks'];          
+                $doCampaigns->status = $campaignStatus;
+                $result = $doCampaigns->update();
+                if ($result == false) {
+                    return MAX::raiseError($rows, MAX_ERROR_DBFAILURE, PEAR_ERROR_DIE);
+                }
+
+                // Send campaign activation/deactivation email
+                phpAds_userlogSetUser(phpAds_userMaintenance);
+                if($doCampaigns->status == OA_ENTITY_STATUS_RUNNING) {
+                    phpAds_userlogAdd(phpAds_actionActiveCampaign, $aCampaign['campaign_id']);
+                    if ($aCampaign['send_activate_deactivate_email'] == 't') {
+                        OA::debug("  - Sending activation email for campaign ID ". $aCampaign['campaign_id'], PEAR_LOG_DEBUG);
+                        $oEmail->sendCampaignActivatedDeactivatedEmail($aCampaign['campaign_id']);
+                    }
+                } else if($doCampaigns->status == OA_ENTITY_STATUS_EXPIRED) {
+                    phpAds_userlogAdd(phpAds_actionDeactiveCampaign, $aCampaign['campaign_id']);
+                    if ($aCampaign['send_activate_deactivate_email'] == 't') {
+                        OA::debug("  - Sending campaign deactivated email ", PEAR_LOG_DEBUG);
+                        $disableReason = OX_CAMPAIGN_DISABLED_CREDITS;
+                        $oEmail->sendCampaignActivatedDeactivatedEmail($aCampaign['campaign_id'], $disableReason);
+                    }
+                }
+            }
+        }
+
+
         $query = "
             SELECT
                 cl.clientid AS advertiser_id,
@@ -1431,20 +1558,7 @@ abstract class OX_Dal_Maintenance_Statistics extends MAX_Dal_Common
                             // No conversions
                             $valuesRow['conversions'] = 0;
                         }
-                        if ($aCampaign['targetimpressions'] > 0) {
-                            if ($aCampaign['targetimpressions'] <= $valuesRow['impressions']) {
-                                // The campaign has an impressions target, and this has been
-                                // passed, so update and disable the campaign
-                                $disableReason |= OX_CAMPAIGN_DISABLED_IMPRESSIONS;
-                            }
-                        }
-                        if ($aCampaign['targetclicks'] > 0) {
-                            if ($aCampaign['targetclicks'] <= $valuesRow['clicks']) {
-                                // The campaign has a click target, and this has been
-                                // passed, so update and disable the campaign
-                                $disableReason |= OX_CAMPAIGN_DISABLED_CLICKS;
-                            }
-                        }
+
                         if ($aCampaign['targetconversions'] > 0) {
                             if ($aCampaign['targetconversions'] <= $valuesRow['conversions']) {
                                 // The campaign has a target limitation, and this has been
@@ -1452,9 +1566,10 @@ abstract class OX_Dal_Maintenance_Statistics extends MAX_Dal_Common
                                 $disableReason |= OX_CAMPAIGN_DISABLED_CONVERSIONS;
                             }
                         }
-                        if ($aCampaign['targetimpressions'] > 0) {
-                           if (($aCampaign['targetimpressions'] * IMPRESSIONS_WEIGHTAGE) <= ($valuesRow['impressions'] * IMPRESSIONS_WEIGHTAGE + $valuesRow['clicks'] * CLICK_WEIGHTAGE)) {
-                                // The campaign has an impressions target, and this has been
+                        if ($aCampaign['targetimpressions'] != -1 && $aCampaign['targetclicks'] != -1) {
+                           if (($aCampaign['targetimpressions'] * IMPRESSIONS_WEIGHTAGE + $aCampaign['targetclicks'] * CLICK_WEIGHTAGE ) <=
+                                 ($valuesRow['impressions'] * IMPRESSIONS_WEIGHTAGE + $valuesRow['clicks'] * CLICK_WEIGHTAGE)) {
+                                // The campaign has an impressions/click target, and this has been
                                 // passed, so update and disable the campaign
                                 $disableReason |= OX_CAMPAIGN_DISABLED_CREDITS;
                             }

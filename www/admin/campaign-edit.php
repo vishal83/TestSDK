@@ -1029,12 +1029,6 @@ function getCampaignInactiveReasons($aCampaign)
     $aPref = $GLOBALS['_MAX']['PREF'];
     $aReasons = array ();
 
-    if (($aCampaign['impressions'] != -1) && ($aCampaign['impressionsRemaining'] <= 0)) {
-        $aReasons [] = $GLOBALS ['strNoMoreImpressions'];
-    }
-    if (($aCampaign['clicks'] != -1) && ($aCampaign['clicksRemainging'] <= 0)) {
-        $aReasons [] = $GLOBALS ['strNoMoreClicks'];
-    }
     if (($aCampaign['conversions'] != -1) & ($aCampaign['conversionsRemaining'] <= 0)) {
         $aReasons [] = $GLOBALS ['strNoMoreConversions'];
     }
@@ -1044,7 +1038,8 @@ function getCampaignInactiveReasons($aCampaign)
     if (strtotime($aCampaign['expire_date'].' 23:59:59') < time()) {
         $aReasons [] = $GLOBALS ['strAfterExpire'];
     }
-    if (($aCampaign['impressions'] != -1) && (($aCampaign['impressions_delivered'] * IMPRESSIONS_WEIGHTAGE + $aCampaign['clicks_delivered'] * CLICK_WEIGHTAGE) >= $aCampaign['impressions'] * IMPRESSIONS_WEIGHTAGE)) {
+    if (($aCampaign['impressions'] != -1) && ($aCampaign['clicks'] != -1) &&
+        (($aCampaign['impressions_delivered'] * IMPRESSIONS_WEIGHTAGE + $aCampaign['clicks_delivered'] * CLICK_WEIGHTAGE) >= ($aCampaign['impressions'] * IMPRESSIONS_WEIGHTAGE + $aCampaign['clicks'] * CLICK_WEIGHTAGE))) {
         $aReasons [] = $GLOBALS ['strNoMoreCredits'];
     }
 

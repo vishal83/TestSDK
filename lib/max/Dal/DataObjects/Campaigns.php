@@ -268,7 +268,7 @@ class DataObjects_Campaigns extends DB_DataObjectCommon
     function _hasExceeededBookings()
     {
         if (!empty($this->campaignid)) {
-            if ($this->views > 0 || $this->clicks > 0 || $this->conversions > 0) {
+            if ($this->views != -1 || $this->clicks != -1 || $this->conversions != -1) {
                 $doBanners = OA_Dal::factoryDO('banners');
                 $doBanners->campaignid = $this->campaignid;
                 $doDia = OA_Dal::factoryDO('data_intermediate_ad');
@@ -280,17 +280,12 @@ class DataObjects_Campaigns extends DB_DataObjectCommon
                 $aStats = $doDia->getAll(array());
 
                 if (isset($aStats[0])) {
-                    if ($this->views > 0 && $aStats[0]['impressions'] >= $this->views) {
-                        return true;
-                    }
-                    if ($this->clicks > 0 && $aStats[0]['clicks'] >= $this->clicks) {
-                        return true;
-                    }
                     if ($this->conversions > 0 && $aStats[0]['conversions'] >= $this->conversions) {
                         return true;
                     }
-                    if ($this->views > 0 && (($aStats[0]['impressions'] * IMPRESSIONS_WEIGHTAGE + $aStats[0]['clicks'] * CLICK_WEIGHTAGE) >= ($this->views * IMPRESSIONS_WEIGHTAGE))) {
-                        return true;
+                    if (($this->views != -1) && ($this->clicks != -1) &&
+                        (($aStats[0]['impressions'] * IMPRESSIONS_WEIGHTAGE + $aStats[0]['clicks'] * CLICK_WEIGHTAGE) >= ($this->views * IMPRESSIONS_WEIGHTAGE + $this->clicks * CLICK_WEIGHTAGE))) {
+                         return true;
                     }
                 }
             }
