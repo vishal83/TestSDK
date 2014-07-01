@@ -1009,6 +1009,33 @@ function _adSelectCheckCriteria($aAd, $aContext, $source, $richMedia)
         return false;
     }
 
+    // Ad aspect ratio can be 9:16 (0.56), 2:3 (0.66), 3:4 (0.75), 4:3 (1.3), 3:2 (1.5), 16:9 (1.7)
+    // App developer needs to provide 1080*1920, 640*960, 1536*2048 sized images for portrait orientation 
+    // and 1920*1080, 960*640, 2048*1536 sized images for landscape orientation
+    $clientAspectRatio = $_GET['clientwidth']/$_GET['clientheight'];
+    $adAspectRatio = $aAd['width']/$aAd['height'];
+     
+    if($adAspectRatio < 1.0)
+    {
+         $clientAspectRatio = floor($clientAspectRatio * 100)/100;
+         $adAspectRatio = floor($adAspectRatio * 100)/100;
+
+         if(($clientAspectRatio >= $adAspectRatio+0.05) || ($clientAspectRatio < $adAspectRatio-0.05))
+         {
+             return false;
+         }
+    }
+    else
+    {
+         $clientAspectRatio = floor($clientAspectRatio * 10)/10;
+         $adAspectRatio = floor($adAspectRatio * 10)/10;
+
+         if(($clientAspectRatio >= $adAspectRatio+0.10) || ($clientAspectRatio < $adAspectRatio-0.10))
+         {
+             return false;
+         }
+    }
+
     // If any of the above failed, this function will have already returned false
     // So to get this far means that the ad was valid
     return true;
