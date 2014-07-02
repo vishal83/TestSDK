@@ -4141,6 +4141,26 @@ if ($conf['delivery']['acls'] && !MAX_limitationsCheckAcl($aAd, $source)) {
 OX_Delivery_logMessage('MAX_limitationsCheckAcl = false for bannerid '.$aAd['ad_id'], 7);
 return false;
 }
+$clientAspectRatio = $_GET['clientwidth']/$_GET['clientheight'];
+$adAspectRatio = $aAd['width']/$aAd['height'];
+if($adAspectRatio < 1.0)
+{
+$clientAspectRatio = floor($clientAspectRatio * 100)/100;
+$adAspectRatio = floor($adAspectRatio * 100)/100;
+if(($clientAspectRatio >= $adAspectRatio+0.05) || ($clientAspectRatio < $adAspectRatio-0.05))
+{
+return false;
+}
+}
+else
+{
+$clientAspectRatio = floor($clientAspectRatio * 10)/10;
+$adAspectRatio = floor($adAspectRatio * 10)/10;
+if(($clientAspectRatio >= $adAspectRatio+0.10) || ($clientAspectRatio < $adAspectRatio-0.10))
+{
+return false;
+}
+}
 return true;
 }
 function _adSelectBuildContextArray(&$aLinkedAds, $adArrayVar, $context, $companion = false)
