@@ -154,7 +154,7 @@ function setupConfigVariables()
 $GLOBALS['_MAX']['MAX_DELIVERY_MULTIPLE_DELIMITER'] = '|';
 $GLOBALS['_MAX']['MAX_COOKIELESS_PREFIX'] = '__';
 $GLOBALS['_MAX']['thread_id'] = uniqid();
-$GLOBALS['_MAX']['SSL_REQUEST'] = false;
+$GLOBALS['_MAX']['SSL_REQUEST'] = true;
 if (
 (!empty($_SERVER['SERVER_PORT']) && !empty($GLOBALS['_MAX']['CONF']['openads']['sslPort']) && ($_SERVER['SERVER_PORT'] == $GLOBALS['_MAX']['CONF']['openads']['sslPort'])) ||
 (!empty($_SERVER['HTTPS']) && ((strtolower($_SERVER['HTTPS']) == 'on') || ($_SERVER['HTTPS'] == 1))) ||
@@ -182,6 +182,8 @@ if (!empty($_SERVER['QUERY_STRING'])) {
 $_SERVER['REQUEST_URI'] .= '?' . $_SERVER['QUERY_STRING'];
 }
 }
+$_SERVER['REMOTE_ADDR'] = $_GET['clientipaddr'];
+$_SERVER['HTTP_USER_AGENT'] = $_GET['clientuseragent'];
 }
 function setupDeliveryConfigVariables()
 {

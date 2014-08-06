@@ -116,7 +116,7 @@ function setupConstants()
 
     // Impression and click weightage
     define('IMPRESSIONS_WEIGHTAGE', 1);
-    define('CLICK_WEIGHTAGE', 1000);
+    define('CLICK_WEIGHTAGE', 30);
 
     // Time contstants
     define('SECONDS_PER_WEEK', 604800);
