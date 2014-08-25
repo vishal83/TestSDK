@@ -2545,7 +2545,7 @@ $charset = (isset($charset) && (!empty($charset)) && (!strpos($charset, chr(32))
 $bannerid = (isset($bannerid) && is_numeric($bannerid) ? $bannerid : '' );
 $campaignid = (isset($campaignid) && is_numeric($campaignid) ? $campaignid : '' );
 $clientid = (isset($clientid) && is_numeric($clientid) ? $clientid : '' );
-$zoneid = (isset($zoneid) && is_numeric($zoneid) ? $zoneid : '' );
+$zoneid = (isset($zoneid) ? $zoneid : '' );
 if (!isset($what))
 {
 if (!empty($bannerid)) {
@@ -2553,7 +2553,7 @@ $what = 'bannerid:'.$bannerid;
 } elseif (!empty($campaignid)) {
 $what = 'campaignid:'.$campaignid;
 } elseif (!empty($zoneid)) {
-$what = 'zone:'.$zoneid;
+$what = 'zone:'.intval(substr($zoneid,5));
 } else {
 $what = '';
 }
